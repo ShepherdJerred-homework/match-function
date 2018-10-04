@@ -1,3 +1,6 @@
+; match
+; Jerred Shepherd
+
 (defun is-pattern (predicate)
         (if
                 (member predicate '(u v w x y z))
@@ -13,6 +16,15 @@
 (defun either-atom (l r)
         (or (atom l) (atom r)))
 
+(defun is-pattern-used (sub pattern)
+        (if
+                (null sub)
+                nil 
+                (if
+                        (eq (caar sub) pattern)
+                        t
+                        (is-pattern-used (cdr sub) pattern))))
+
 (defun match-recur (term pattern sub)
         (if
                 (both-null term pattern)
@@ -24,16 +36,23 @@
                                 (eq (car term) (car pattern))
                                 (match-recur (cdr term) (cdr pattern) sub)
                                 (if 
-                                        (is-pattern (car pattern))
-                                        (match-recur (cdr term) (cdr pattern) (cons sub (cons (cons (car pattern) (car term)) nil)))
-                                        (if
-                                                (either-atom (car pattern) (car term))
-                                                nil
-                                                ()))))))
+                                                (is-pattern (car pattern))
+                                                (if
+                                                        (is-pattern-used sub (car pattern))
+                                                        nil
+                                                        (if 
+                                                                (null (car sub))
+                                                                (match-recur (cdr term) (cdr pattern) (cons (cons (car pattern) (car term)) nil))
+                                                                (match-recur (cdr term) (cdr pattern) (cons sub (cons (cons (car pattern) (car term)) nil)))))
+                                                (if
+                                                        (either-atom (car pattern) (car term))
+                                                        nil
+                                                        ()))))))
  
 (defun match (term pattern)
         (match-recur term pattern '(nil)))
 
+; Test cases
 (and
         (and 
                 (eq (is-pattern 'x) t)
