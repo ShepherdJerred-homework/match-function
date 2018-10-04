@@ -1,21 +1,35 @@
 ; match
 ; Jerred Shepherd
 
+; predicate: a symbol
+; returns: T if predicate is a pattern variable (u, v, w, x, y, z), NIL otherwise
 (defun is-pattern (predicate)
         (if
                 (member predicate '(u v w x y z))
                 t
                 nil))
 
+; l: an S-Expression
+; r: an S-Expression
+; returns: T if both l and r are NULL, NIL otherwise
 (defun both-null (l r)
         (and (null l) (null r)))
 
+; l: an S-Expression
+; r: an S-Expression
+; returns: T if either l or r are NULL, NIL otherwise
 (defun either-null (l r)
         (or (null l) (null r)))
         
+; l: an S-Expression
+; r: an S-Expression
+; returns: T if either l or r are and atom, NIL otherwise
 (defun either-atom (l r)
         (or (atom l) (atom r)))
 
+; sub: a list of lists which contain pattern variables
+; pattern: a variable to check for
+; returns: T if sub contains pattern, NIL otherwise
 (defun is-pattern-used (sub pattern)
         (if
                 (null sub)
@@ -25,6 +39,10 @@
                         t
                         (is-pattern-used (cdr sub) pattern))))
 
+; term: a list to match
+; pattern: a pattern list
+; sub: substituions that can be applied to pattern to make it identical to the term
+; returns: (NIL) if term and pattern already match, NIL if term and pattern cannot match, a list of substitutions that can be applied to the pattern to make it identical to the substitution
 (defun match-recur (term pattern sub)
         (if
                 (both-null term pattern)
@@ -42,13 +60,13 @@
                                                         nil
                                                         (if 
                                                                 (null (car sub))
-                                                                (match-recur (cdr term) (cdr pattern) (cons (cons (car pattern) (car term)) nil))
-                                                                (match-recur (cdr term) (cdr pattern) (cons sub (cons (cons (car pattern) (car term)) nil)))))
+                                                                (match-recur (cdr term) (cdr pattern) (list (cons (car pattern) (car term))))
+                                                                (match-recur (cdr term) (cdr pattern) (append sub (list (cons (car pattern) (car term)))))))
                                                 (if
                                                         (either-atom (car pattern) (car term))
                                                         nil
                                                         ()))))))
- 
+
 (defun match (term pattern)
         (match-recur term pattern '(nil)))
 
@@ -66,6 +84,7 @@
                 (eq (either-null 'a 'nil) t)
                 (eq (either-null 'a 'b) nil))
         (and
+                (eq (match '(+ a b) '(+ y z)) ((y . a) (z . b)))
                 (eq (match '(+ a b) '(+ a x)) ((x . b)))
                 (eq (match '(* a b) '(* a b)) (nil))
                 (eq (match '(f a b) '(f a a)) nil)
