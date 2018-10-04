@@ -9,64 +9,50 @@
 
 (defun either-null (l r)
         (or (null l) (null r)))
+        
+(defun either-atom (l r)
+        (or (atom l) (atom r)))
 
-(defun match-one (term pattern)
+(defun match-recur (term pattern sub)
         (if
-                (eq term pattern)
-                '(nil)
+                (both-null term pattern)
+                sub
                 (if
-                        (is-pattern pattern)
-                        (cons pattern term)
-                        nil)))
-
-(defun format-matches (matches)
-        (let 
-                (
-                        (c-match (car matches)) 
-                        (n-match (cdr matches)))
-                (if
-                        (null n-match)
+                        (either-null term pattern)
                         nil
-                  if (null c-match)
-                  (cons (format-matches n-match)))))
-                        
-                       
-                  
-    
-
-   
-
+                        (if
+                                (eq (car term) (car pattern))
+                                (match-recur (cdr term) (cdr pattern) sub)
+                                (if 
+                                        (is-pattern (car pattern))
+                                        (match-recur (cdr term) (cdr pattern) (cons sub (cons (cons (car pattern) (car term)) nil)))
+                                        (if
+                                                (either-atom (car pattern) (car term))
+                                                nil
+                                                ()))))))
+ 
 (defun match (term pattern)
-        (let
-                (
-                        (c-term (car term))
-                        (c-pattern (car pattern))
-                        (n-term (cdr term))
-                        (n-pattern (cdr pattern)))
-                (if
-                        (both-null n-term n-pattern)
-                        (match-one c-term c-pattern) 
-                        (cons (match-one c-term c-pattern) (match n-term n-pattern)))))
+        (match-recur term pattern '(nil)))
 
 (and
-  (and 
-    (eq (is-pattern 'x) t)
-    (eq (is-pattern 'a) nil))
-  (and
-    (eq (both-null 'nil 'nil) t)
-    (eq (both-null 'a 'nil) nil)
-    (eq (both-null 'a 'b) nil))
-  (and
-    (eq (either-null 'nil 'nil) t)
-    (eq (either-null 'a 'nil) t)
-    (eq (either-null 'a 'b) nil))
-  (and
-    (eq (match '(+ a b) '(+ a x)) ((x . b)))
-    (eq (match '(* a b) '(* a b)) (nil))
-    (eq (match '(f a b) '(f a a)) nil)
-    (eq (match '(+ a b) '(- a b)) nil)
-    (eq (match '(+ (- b c) a) '(+ x y)) ((x - b c) (y . a)))
-    (eq (match '(loves a b) '(loves x x)) nil)
-    (eq (match '(loves joe pie) '(loves x pie)) nil)
-    (eq (match '(+ a (+ b a)) '(+ x (+ y x))) ((x . a) (y . b)))))
+        (and 
+                (eq (is-pattern 'x) t)
+                (eq (is-pattern 'a) nil))
+        (and
+                (eq (both-null 'nil 'nil) t)
+                (eq (both-null 'a 'nil) nil)
+                (eq (both-null 'a 'b) nil))
+        (and
+                (eq (either-null 'nil 'nil) t)
+                (eq (either-null 'a 'nil) t)
+                (eq (either-null 'a 'b) nil))
+        (and
+                (eq (match '(+ a b) '(+ a x)) ((x . b)))
+                (eq (match '(* a b) '(* a b)) (nil))
+                (eq (match '(f a b) '(f a a)) nil)
+                (eq (match '(+ a b) '(- a b)) nil)
+                (eq (match '(+ (- b c) a) '(+ x y)) ((x - b c) (y . a)))
+                (eq (match '(loves a b) '(loves x x)) nil)
+                (eq (match '(loves joe pie) '(loves x pie)) ((x . joe)))
+                (eq (match '(+ a (+ b a)) '(+ x (+ y x))) ((x . a) (y . b)))))
 
