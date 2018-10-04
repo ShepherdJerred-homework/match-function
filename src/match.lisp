@@ -30,14 +30,26 @@
 ; sub: a list of lists which contain pattern variables
 ; pattern: a variable to check for
 ; returns: T if sub contains pattern, NIL otherwise
-(defun is-pattern-used (sub pattern)
+(defun is-pattern-conflict (sub pattern value)
         (if
                 (null sub)
                 nil 
                 (if
                         (eq (caar sub) pattern)
-                        t
-                        (is-pattern-used (cdr sub) pattern))))
+                        (if
+                                (eq (cdr (car sub)) value)
+                                (is-pattern-conflict (cdr sub) pattern value)
+                                t)
+                        (is-pattern-conflict (cdr sub) pattern value))))
+
+(defun is-pattern-used (sub pattern value)
+        (if
+                (null sub)
+                nil 
+                (if
+                        (eq (caar sub) pattern)
+                        t      
+                        (is-pattern-used (cdr sub) pattern value))))
 
 ; term: a list to match
 ; pattern: a pattern list
@@ -56,41 +68,52 @@
                                 (if 
                                                 (is-pattern (car pattern))
                                                 (if
-                                                        (is-pattern-used sub (car pattern))
+                                                        (is-pattern-conflict sub (car pattern) (car term))
                                                         nil
-                                                        (if 
-                                                                (null (car sub))
-                                                                (match-recur (cdr term) (cdr pattern) (list (cons (car pattern) (car term))))
-                                                                (match-recur (cdr term) (cdr pattern) (append sub (list (cons (car pattern) (car term)))))))
+                                                        (if
+                                                                (is-pattern-used sub (car pattern) (car term))
+                                                                (match-recur (cdr term) (cdr pattern) sub)
+                                                                (if 
+                                                                        (null (car sub))
+                                                                        (match-recur (cdr term) (cdr pattern) (list (cons (car pattern) (car term))))
+                                                                        (match-recur (cdr term) (cdr pattern) (append sub (list (cons (car pattern) (car term))))))))
                                                 (if
-                                                        (either-atom (car pattern) (car term))
+                                                        (either-atom (car term) (car pattern))
                                                         nil
-                                                        ()))))))
+                                                        (let    
+                                                                (
+                                                                        (matched-list (match-recur (car term) (car pattern) sub)))
+                                                                (if 
+                                                                        (null matched-list)
+                                                                        nil
+                                                                        (match-recur (cdr term) (cdr pattern) matched-list)))))))))
 
 (defun match (term pattern)
         (match-recur term pattern '(nil)))
 
 ; Test cases
-(and
-        (and 
-                (eq (is-pattern 'x) t)
-                (eq (is-pattern 'a) nil))
-        (and
-                (eq (both-null 'nil 'nil) t)
-                (eq (both-null 'a 'nil) nil)
-                (eq (both-null 'a 'b) nil))
-        (and
-                (eq (either-null 'nil 'nil) t)
-                (eq (either-null 'a 'nil) t)
-                (eq (either-null 'a 'b) nil))
-        (and
-                (eq (match '(+ a b) '(+ y z)) ((y . a) (z . b)))
-                (eq (match '(+ a b) '(+ a x)) ((x . b)))
-                (eq (match '(* a b) '(* a b)) (nil))
-                (eq (match '(f a b) '(f a a)) nil)
-                (eq (match '(+ a b) '(- a b)) nil)
-                (eq (match '(+ (- b c) a) '(+ x y)) ((x - b c) (y . a)))
-                (eq (match '(loves a b) '(loves x x)) nil)
-                (eq (match '(loves joe pie) '(loves x pie)) ((x . joe)))
-                (eq (match '(+ a (+ b a)) '(+ x (+ y x))) ((x . a) (y . b)))))
+; (and
+;         (and
+;                 (equal (is-pattern-conflict '((X . A)) 'X 'A) nil))
+;         (and 
+;                 (equal (is-pattern 'x) t)
+;                 (equal (is-pattern 'a) nil))
+;         (and
+;                 (equal (both-null 'nil 'nil) t)
+;                 (equal (both-null 'a 'nil) nil)
+;                 (equal (both-null 'a 'b) nil))
+;         (and
+;                 (equal (either-null 'nil 'nil) t)
+;                 (equal (either-null 'a 'nil) t)
+;                 (equal (either-null 'a 'b) nil))
+;         (and
+;                 (equal (match '(+ a b) '(+ y z)) '((y . a) (z . b)))
+;                 (equal (match '(+ a b) '(+ a x)) '((x . b)))
+;                 (equal (match '(* a b) '(* a b)) '(nil))
+;                 (equal (match '(f a b) '(f a a)) nil)
+;                 (equal (match '(+ a b) '(- a b)) nil)
+;                 (equal (match '(+ (- b c) a) '(+ x y)) '((x - b c) (y . a)))
+;                 (equal (match '(loves a b) '(loves x x)) nil)
+;                 (equal (match '(loves joe pie) '(loves x pie)) '((x . joe)))
+;                (equal (match '(+ a (+ b a)) '(+ x (+ y x))) '((x . a) (y . b)))))
 
