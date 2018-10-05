@@ -63,23 +63,23 @@
                         (either-null term pattern)
                         nil
                         (if
-                                (eq (car term) (car pattern))
-                                (match-recur (cdr term) (cdr pattern) sub)
-                                (if 
-                                                (is-pattern (car pattern))
-                                                (if
-                                                        (is-pattern-conflict sub (car pattern) (car term))
-                                                        nil
+                                (either-atom term pattern)
+                                nil
+                                (if
+                                        (eq (car term) (car pattern))
+                                        (match-recur (cdr term) (cdr pattern) sub)
+                                        (if 
+                                                        (is-pattern (car pattern))
                                                         (if
-                                                                (is-pattern-used sub (car pattern) (car term))
-                                                                (match-recur (cdr term) (cdr pattern) sub)
-                                                                (if 
-                                                                        (null (car sub))
-                                                                        (match-recur (cdr term) (cdr pattern) (list (cons (car pattern) (car term))))
-                                                                        (match-recur (cdr term) (cdr pattern) (append sub (list (cons (car pattern) (car term))))))))
-                                                (if
-                                                        (either-atom (car term) (car pattern))
-                                                        nil
+                                                                (is-pattern-conflict sub (car pattern) (car term))
+                                                                nil
+                                                                (if
+                                                                        (is-pattern-used sub (car pattern) (car term))
+                                                                        (match-recur (cdr term) (cdr pattern) sub)
+                                                                        (if 
+                                                                                (null (car sub))
+                                                                                (match-recur (cdr term) (cdr pattern) (list (cons (car pattern) (car term))))
+                                                                                (match-recur (cdr term) (cdr pattern) (append sub (list (cons (car pattern) (car term))))))))
                                                         (let    
                                                                 (
                                                                         (matched-list (match-recur (car term) (car pattern) sub)))
@@ -107,6 +107,7 @@
 ;                 (equal (either-null 'a 'nil) t)
 ;                 (equal (either-null 'a 'b) nil))
 ;         (and
+;                 (equal (match 'a 'b) nil)
 ;                 (equal (match '(+ a b) '(+ y z)) '((y . a) (z . b)))
 ;                 (equal (match '(+ a b) '(+ a x)) '((x . b)))
 ;                 (equal (match '(* a b) '(* a b)) '(nil))
@@ -115,5 +116,5 @@
 ;                 (equal (match '(+ (- b c) a) '(+ x y)) '((x - b c) (y . a)))
 ;                 (equal (match '(loves a b) '(loves x x)) nil)
 ;                 (equal (match '(loves joe pie) '(loves x pie)) '((x . joe)))
-;                (equal (match '(+ a (+ b a)) '(+ x (+ y x))) '((x . a) (y . b)))))
+;                 (equal (match '(+ a (+ b a)) '(+ x (+ y x))) '((x . a) (y . b)))))
 
